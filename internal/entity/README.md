@@ -12,6 +12,15 @@ curl --location 'http://localhost:8080/loans' \
 }'
 ```
 
+- Approve Loan
+POST /loans/{loanID}/approve
+```
+curl --location 'http://localhost:8080/loans/1/approve' \
+--header 'Authorization: Bearer 1' \
+--data '{
+    "document_url": "https://google.com"
+}'
+```
 - Invest Loan
 - Get Loans
 
@@ -23,7 +32,7 @@ PostgreSQL DDL
 
 ```
 CREATE TABLE loans (
-    id BIGSERIAL PRIMARY KEY,
+    loan_id BIGSERIAL PRIMARY KEY,
     borrower_id BIGINT NOT NULL,
     principal_amount BIGINT NOT NULL,
     interest_rate REAL NOT NULL,        -- Stored as percentage
@@ -43,10 +52,10 @@ CREATE INDEX idx_loans_created_at ON loans(created_at);
 
 CREATE TABLE actions (
     action_id BIGSERIAL PRIMARY KEY,
-    loan_id BIGINT NOT NULL REFERENCES loans(id) ON DELETE CASCADE,
+    loan_id BIGINT NOT NULL REFERENCES loans(loan_id) ON DELETE CASCADE,
     action_type INT NOT NULL,           -- Enum or predefined action types (e.g., approval, disbursement)
     action_by INT NOT NULL,
-    document TEXT,
+    document_url TEXT,
     created_by BIGINT NOT NULL,         -- Stores user ID, assuming from external service
     created_at TIMESTAMP NOT NULL
 );
@@ -59,7 +68,7 @@ CREATE INDEX idx_actions_created_at ON actions(created_at);
 
 CREATE TABLE investments (
     investment_id BIGSERIAL PRIMARY KEY,
-    loan_id BIGINT NOT NULL REFERENCES loans(id) ON DELETE CASCADE,
+    loan_id BIGINT NOT NULL REFERENCES loans(loan_id) ON DELETE CASCADE,
     investor_id BIGINT NOT NULL,        -- Stores user ID, assuming from external service
     investment_amount BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL

@@ -3,11 +3,11 @@ package constant
 const (
 	LoanStatusProposed  = 10
 	LoanStatusApproved  = 20
-	LoanStatusRejected  = 21
 	LoanStatusInvested  = 30
 	LoanStatusDisbursed = 40
 	LoanStatusRepayment = 50
 	LoanStatusClosed    = 60
+	LoanStatusRejected  = 61
 )
 
 var (

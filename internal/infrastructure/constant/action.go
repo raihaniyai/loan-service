@@ -2,9 +2,10 @@ package constant
 
 const (
 	ActionTypeCreateLoan  = 1
-	ActionTypeUpdateLoan  = 2
-	ActionTypeApproveLoan = 3
-	ActionTypeRejectLoan  = 4
-	ActionTypeInvestLoan  = 5
-	ActionTypeDisburse    = 6
+	ActionTypeApproveLoan = 2
+	ActionTypeRejectLoan  = 3
+	ActionTypeInvestLoan  = 4
+	ActionTypeDisburse    = 5
+	ActionTypeRepay       = 6
+	ActionTypeCloseLoan   = 7
 )

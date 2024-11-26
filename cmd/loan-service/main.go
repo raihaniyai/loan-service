@@ -8,8 +8,14 @@ import (
 	"loan-service/db"
 
 	"loan-service/internal/handlers"
+	actionHandler "loan-service/internal/handlers/action"
 	loanHandler "loan-service/internal/handlers/loan"
+
+	"loan-service/internal/repositories"
+	actionRepository "loan-service/internal/repositories/action"
 	loanRepository "loan-service/internal/repositories/loan"
+
+	actionService "loan-service/internal/services/action"
 	loanService "loan-service/internal/services/loan"
 )
 
@@ -23,14 +29,18 @@ func main() {
 	}
 
 	// Initialize repositories
+	actionRepo := actionRepository.New(db.DB)
+	dbRepo := repositories.New(db.DB)
 	loanRepo := loanRepository.New(db.DB)
 
 	// Initialize services
-	loanService := loanService.New(loanRepo)
+	actionService := actionService.New(actionRepo, dbRepo, loanRepo)
+	loanService := loanService.New(actionRepo, dbRepo, loanRepo)
 
 	// Initialize handlers
+	actionHandler := actionHandler.New(actionService)
 	loanHandler := loanHandler.New(loanService)
-	handler := handlers.New(loanHandler)
+	handler := handlers.New(actionHandler, loanHandler)
 
 	router := handlers.RegisterRoutes(&handler, db.DB)
 

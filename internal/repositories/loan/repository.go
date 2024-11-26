@@ -1,14 +1,18 @@
 package loan
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 
 	"loan-service/internal/entity"
 )
 
 type Repository interface {
-	GetLoanByBorrowerIDAndNotInStatus(userID int64, status int) (*entity.Loan, error)
-	SetLoan(loan *entity.Loan) (int64, error)
+	GetLoanByBorrowerIDAndNotInStatuses(ctx context.Context, userID int64, statuses []int) (*entity.Loan, error)
+	GetLoanByID(ctx context.Context, loanID int64) (*entity.Loan, error)
+	SetLoan(ctx context.Context, tx *gorm.DB, loan *entity.Loan) (int64, error)
+	UpdateLoan(ctx context.Context, tx *gorm.DB, loan *entity.Loan) error
 }
 
 type repository struct {

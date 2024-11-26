@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Loan struct {
-	ID                 int64     `gorm:"primaryKey" json:"loan_id"`
+	LoanID             int64     `gorm:"primaryKey" json:"loan_id"`
 	BorrowerID         int64     `gorm:"not null" json:"borrower_id"`
 	PrincipalAmount    int64     `gorm:"not null" json:"principal_amount"`
 	InterestRate       float32   `gorm:"not null" json:"interest_rate"`        // in percentage

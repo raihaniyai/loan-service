@@ -1,20 +1,19 @@
-package loan
+package action
 
 import (
 	"context"
-
 	"loan-service/internal/repositories"
 	"loan-service/internal/repositories/action"
 	"loan-service/internal/repositories/loan"
 )
 
 type Service interface {
-	CreateLoan(ctx context.Context, request CreateLoanRequest) (CreateLoanResult, error)
+	ApproveLoan(ctx context.Context, request ApproveLoanRequest) (ApproveLoanResult, error)
 }
 
 type service struct {
-	database         repositories.DB
 	actionRepository action.Repository
+	database         repositories.DB
 	loanRepository   loan.Repository
 }
 
