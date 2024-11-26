@@ -1,5 +1,14 @@
 package loan
 
-type CreateLoanRequest struct{}
+import "loan-service/internal/entity"
 
-type CreateLoanResult struct{}
+type CreateLoanRequest struct {
+	User               entity.User
+	PrincipalAmount    int64
+	InterestRate       float32
+	ReturnOnInvestment float32
+}
+
+type CreateLoanResult struct {
+	LoanID int64
+}

@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"loan-service/internal/handlers/loan"
+	"loan-service/internal/infrastructure/middleware"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -16,8 +18,9 @@ func New(loanHandler loan.Handler) Handler {
 	}
 }
 
-func RegisterRoutes(h *Handler) *mux.Router {
+func RegisterRoutes(h *Handler, db *gorm.DB) *mux.Router {
 	r := mux.NewRouter()
+	r.Use(middleware.JWTMiddlewareWithDB(db))
 
 	r.HandleFunc("/loans", h.loanHandler.CreateLoan).Methods("POST")
 

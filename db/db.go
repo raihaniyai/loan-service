@@ -1,42 +1,35 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
+	"log"
 
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"loan-service/configs"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
 
 func InitializeDatabase(config configs.DatabaseConfig) error {
-	connStr := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		config.DBHost,
 		config.DBUser,
 		config.DBPassword,
-		config.DBHost,
-		config.DBPort,
 		config.DBName,
-		"disable",
+		config.DBPort,
 	)
 
 	var err error
-	DB, err = sql.Open("postgres", connStr)
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		log.Fatal("Failed to connect to database:", err)
 	}
 
-	if err := DB.Ping(); err != nil {
-		return fmt.Errorf("failed to ping database: %w", err)
-	}
+	log.Println("⚡ Successfully connected to database")
 
 	return nil
-}
-
-func CloseDB() {
-	if DB != nil {
-		DB.Close()
-	}
 }
