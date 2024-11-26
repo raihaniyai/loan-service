@@ -64,10 +64,10 @@ func (svc *service) ApproveLoan(ctx context.Context, request ApproveLoanRequest)
 		return ApproveLoanResult{}, err
 	}
 
-	err = tx.Commit().Error
-	if err != nil {
-		log.Println("SVC.AL04 | [ApproveLoan] Error committing transaction:", err)
-		return ApproveLoanResult{}, err
+	errCommit := tx.Commit().Error
+	if errCommit != nil {
+		log.Println("SVC.AL04 | [ApproveLoan] Error committing transaction:", errCommit)
+		return ApproveLoanResult{}, errCommit
 	}
 
 	return ApproveLoanResult{}, nil

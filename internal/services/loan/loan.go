@@ -85,10 +85,10 @@ func (svc *service) CreateLoan(ctx context.Context, request CreateLoanRequest) (
 		return CreateLoanResult{}, err
 	}
 
-	err = svc.database.Commit(tx)
-	if err != nil {
-		log.Println("SVC.CL06 | [CreateLoan] Error committing transaction:", err)
-		return CreateLoanResult{}, err
+	errCommit := svc.database.Commit(tx)
+	if errCommit != nil {
+		log.Println("SVC.CL06 | [CreateLoan] Error committing transaction:", errCommit)
+		return CreateLoanResult{}, errCommit
 	}
 
 	return CreateLoanResult{

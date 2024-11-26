@@ -13,6 +13,7 @@ import (
 
 	"loan-service/internal/repositories"
 	actionRepository "loan-service/internal/repositories/action"
+	investmentRepo "loan-service/internal/repositories/investment"
 	loanRepository "loan-service/internal/repositories/loan"
 
 	actionService "loan-service/internal/services/action"
@@ -31,10 +32,11 @@ func main() {
 	// Initialize repositories
 	actionRepo := actionRepository.New(db.DB)
 	dbRepo := repositories.New(db.DB)
+	investmentRepo := investmentRepo.New(db.DB)
 	loanRepo := loanRepository.New(db.DB)
 
 	// Initialize services
-	actionService := actionService.New(actionRepo, dbRepo, loanRepo)
+	actionService := actionService.New(actionRepo, dbRepo, investmentRepo, loanRepo)
 	loanService := loanService.New(actionRepo, dbRepo, loanRepo)
 
 	// Initialize handlers
