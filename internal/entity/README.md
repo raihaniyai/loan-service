@@ -85,7 +85,7 @@ CREATE TABLE users (
     name VARCHAR(255),
     role INT NOT NULL,                  -- Enum or predefined roles (e.g., admin=1, borrower=2, investor=3)
     email VARCHAR(255) UNIQUE,
-    phone_number VARCHAR(20) UNIQUE
+    phone_number VARCHAR(20)
 );
 
 -- Indexes for users table
@@ -106,7 +106,6 @@ CREATE INDEX idx_funds_user_id ON funds(user_id);
 
 DML users (data are dummy)
 ```
--- Insert 10 sample rows into the users table with Indonesian names and phone numbers (no dashes)
 INSERT INTO users (name, role, email, phone_number)
 VALUES 
   ('Andi Pratama', 1, 'andi.pratama@example.com', '081234567890'),

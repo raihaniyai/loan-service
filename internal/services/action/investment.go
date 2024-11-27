@@ -3,12 +3,12 @@ package action
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
 	"loan-service/internal/entity"
 	"loan-service/internal/infrastructure/constant"
+	"loan-service/internal/infrastructure/nsq"
 )
 
 func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error) {
@@ -126,21 +126,26 @@ func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (
 		}
 
 		for _, investment := range investments {
-			// TODO: publish kafka message
-			// send pdf documents to all investors (publish kafka message)
-			fmt.Println(investment.InvestorID)
+			message := nsq.InvestmentCompletedMessage{
+				LoanID:     loan.LoanID,
+				InvestorID: investment.InvestorID,
+			}
+			err := svc.nsq.Publish(constant.NSQTopicLoanInvestmentCompleted, message)
+			if err != nil {
+				log.Println("SVC.IL14 | [InvestLoan] Error sending PDF:", err)
+			}
 		}
 	}
 
 	err = svc.fundRepository.UpdateBalanceByUserID(ctx, tx, request.UserID, userBalance-request.InvestmentAmount)
 	if err != nil {
-		log.Println("SVC.IL13 | [InvestLoan] Error updating balance:", err)
+		log.Println("SVC.IL14 | [InvestLoan] Error updating balance:", err)
 		return InvestLoanResult{}, err
 	}
 
 	errCommit := svc.database.Commit(tx)
 	if errCommit != nil {
-		log.Println("SVC.IL14 | [InvestLoan] Error committing transaction:", errCommit)
+		log.Println("SVC.IL15 | [InvestLoan] Error committing transaction:", errCommit)
 		return InvestLoanResult{}, errCommit
 	}
 
@@ -148,4 +153,71 @@ func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (
 		InvestmentID: investment.InvestmentID,
 		LoanID:       loan.LoanID,
 	}, nil
+}
+
+// Testing purpose
+func (svc *service) SendPDF(ctx context.Context, request SendAgreementLetterRequest) error {
+	err := svc.nsq.Publish(constant.NSQTopicLoanInvestmentCompleted, request)
+	if err != nil {
+		log.Println("SVC.SPDF00 | [SendPDF] Error sending PDF:", err)
+		return err
+	}
+
+	return nil
+}
+
+func (svc *service) SendAgreementLetter(ctx context.Context, request SendAgreementLetterRequest) error {
+	loan, err := svc.loanRepository.GetLoanByID(ctx, request.LoanID)
+	if err != nil {
+		log.Println("SVC.SAL00 | [SendAgreementLetter] Error getting loan:", err)
+		return err
+	}
+
+	if loan == nil {
+		log.Println("SVC.SAL01 | [SendAgreementLetter] Loan not found")
+		return errors.New("loan not found")
+	}
+
+	if loan.Status != constant.LoanStatusInvested {
+		log.Println("SVC.SAL02 | [SendAgreementLetter] Loan is not invested")
+		return errors.New("loan is not invested")
+	}
+
+	borrower, err := svc.userRepository.GetUserByUserID(ctx, loan.BorrowerID)
+	if err != nil {
+		log.Println("SVC.SAL03 | [SendAgreementLetter] Error getting user:", err)
+		return err
+	}
+
+	if borrower == nil {
+		log.Println("SVC.SAL04 | [SendAgreementLetter] Borrower not found")
+		return errors.New("user not found")
+	}
+
+	investor, err := svc.userRepository.GetUserByUserID(ctx, request.InvestorID)
+	if err != nil {
+		log.Println("SVC.SAL05 | [SendAgreementLetter] Error getting investor:", err)
+		return err
+	}
+
+	if investor == nil {
+		log.Println("SVC.SAL06 | [SendAgreementLetter] Investor not found")
+		return errors.New("investor not found")
+	}
+
+	// generate pdf
+	pdf, err := svc.pdfService.GenerateAgreementLetter(ctx, loan, borrower, investor)
+	if err != nil {
+		log.Println("SVC.SAL07 | [SendAgreementLetter] Error generating PDF:", err)
+		return err
+	}
+
+	// send pdf
+	err = svc.fundRepository.SendPDF(ctx, request.InvestorID, pdf)
+	if err != nil {
+		log.Println("SVC.SAL08 | [SendAgreementLetter] Error sending PDF:", err)
+		return err
+	}
+
+	return nil
 }

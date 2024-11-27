@@ -14,8 +14,10 @@ var (
 	LoanStatusText = map[int]string{
 		LoanStatusProposed:  "Proposed",
 		LoanStatusApproved:  "Approved",
-		LoanStatusRejected:  "Rejected",
 		LoanStatusInvested:  "Invested",
 		LoanStatusDisbursed: "Disbursed",
+		LoanStatusRepayment: "Repayment",
+		LoanStatusClosed:    "Closed",
+		LoanStatusRejected:  "Rejected",
 	}
 )

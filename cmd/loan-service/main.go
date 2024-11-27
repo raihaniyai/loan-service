@@ -22,6 +22,8 @@ import (
 	actionService "loan-service/internal/services/action"
 	loanService "loan-service/internal/services/loan"
 	userService "loan-service/internal/services/user"
+
+	"loan-service/internal/infrastructure/nsq"
 )
 
 func main() {
@@ -33,6 +35,26 @@ func main() {
 		log.Fatalf("Error initializing database: %v", err)
 	}
 
+	// Initialize NSQ Publisher
+	nsqPublisher, err := nsq.NewPublisher(config.NSQ.NSQDAddress)
+	if err != nil {
+		log.Fatalf("Error initializing NSQ producer: %v", err)
+	}
+	defer nsqPublisher.Stop()
+
+	// Initialize NSQ Consumer
+	nsqMessageHandler := &handlers.NSQMessageHandler{}
+	nsqConsumer, err := nsq.NewConsumer(
+		config.NSQ.Topic,
+		config.NSQ.Channel,
+		config.NSQ.LookupDAddress,
+		nsqMessageHandler,
+	)
+	if err != nil {
+		log.Fatalf("Error initializing NSQ consumer: %v", err)
+	}
+	defer nsqConsumer.Stop()
+
 	// Initialize repositories
 	actionRepo := actionRepository.New(db.DB)
 	dbRepo := repositories.New(db.DB)
@@ -42,7 +64,7 @@ func main() {
 	userRepo := userRepository.New(db.DB)
 
 	// Initialize services
-	actionService := actionService.New(actionRepo, dbRepo, fundRepo, investmentRepo, loanRepo)
+	actionService := actionService.New(actionRepo, dbRepo, fundRepo, investmentRepo, nsqPublisher, loanRepo)
 	loanService := loanService.New(actionRepo, dbRepo, loanRepo)
 	userService := userService.New(dbRepo, fundRepo, userRepo)
 

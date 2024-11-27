@@ -23,3 +23,8 @@ type InvestLoanResult struct {
 	InvestmentID int64
 	LoanID       int64
 }
+
+type SendAgreementLetterRequest struct {
+	LoanID     int64
+	InvestorID int64
+}
