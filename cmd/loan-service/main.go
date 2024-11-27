@@ -42,19 +42,6 @@ func main() {
 	}
 	defer nsqPublisher.Stop()
 
-	// Initialize NSQ Consumer
-	nsqMessageHandler := &handlers.NSQMessageHandler{}
-	nsqConsumer, err := nsq.NewConsumer(
-		config.NSQ.Topic,
-		config.NSQ.Channel,
-		config.NSQ.LookupDAddress,
-		nsqMessageHandler,
-	)
-	if err != nil {
-		log.Fatalf("Error initializing NSQ consumer: %v", err)
-	}
-	defer nsqConsumer.Stop()
-
 	// Initialize repositories
 	actionRepo := actionRepository.New(db.DB)
 	dbRepo := repositories.New(db.DB)
@@ -64,7 +51,7 @@ func main() {
 	userRepo := userRepository.New(db.DB)
 
 	// Initialize services
-	actionService := actionService.New(actionRepo, dbRepo, fundRepo, investmentRepo, nsqPublisher, loanRepo)
+	actionService := actionService.New(actionRepo, dbRepo, fundRepo, investmentRepo, loanRepo, nsqPublisher, userRepo)
 	loanService := loanService.New(actionRepo, dbRepo, loanRepo)
 	userService := userService.New(dbRepo, fundRepo, userRepo)
 
@@ -75,6 +62,19 @@ func main() {
 	handler := handlers.New(actionHandler, loanHandler, userHandler)
 
 	router := handlers.RegisterRoutes(&handler, db.DB)
+
+	// Initialize NSQ Consumer
+	nsqMessageHandler := handlers.NewNSQHandler(actionService)
+	nsqConsumer, err := nsq.NewConsumer(
+		config.NSQ.Topic,
+		config.NSQ.Channel,
+		config.NSQ.LookupDAddress,
+		nsqMessageHandler,
+	)
+	if err != nil {
+		log.Fatalf("Error initializing NSQ consumer: %v", err)
+	}
+	defer nsqConsumer.Stop()
 
 	port := ":8080"
 	log.Printf("⚡ Loan Service running on http://localhost%s", port)

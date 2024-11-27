@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Agreement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .content p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .signature-section {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .signature-section p {
+            font-size: 18px;
+        }
+
+        .terms {
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Loan Agreement</h1>
+
+    <div class="content">
+        <p><strong>Agreement Date:</strong> {{.AgreementDate}}</p>
+        <p><strong>Borrower's Name:</strong> {{.BorrowerName}}</p>
+        <p><strong>Loan Amount:</strong> Rp{{.PrincipalAmountStr}}</p>
+        <p><strong>Interest Rate:</strong> {{.InterestRate}}%</p>
+    </div>
+
+    <div class="content">
+        <p>This Loan Agreement is made and entered into on the above-mentioned agreement date between the Borrower,
+            {{.BorrowerName}}, and {{.InvestorName}} as the Investor.</p>
+        <p>The Borrower agrees to repay the loan amount of RP{{.PrincipalAmountStr}} at an interest rate of
+            {{.InterestRate}}%. The loan is to be repaid according to the terms specified in the repayment schedule.</p>
+    </div>
+
+    <div class="content">
+        <h3>Terms and Conditions</h3>
+        <ul class="terms">
+            <li>The loan is to be repaid in full within the agreed repayment period.</li>
+            <li>Failure to repay the loan as per the terms will result in late fees or legal action.</li>
+            <li>The Borrower agrees to the terms and conditions outlined in this agreement.</li>
+            <li>The loan amount and interest rate are fixed and will not change during the loan term.</li>
+        </ul>
+    </div>
+
+    <div class="signature-section">
+        <p><strong>Signed by:</strong></p>
+        <p>Borrower: _______________________________</p>
+        <p>Investor: _______________________________</p>
+    </div>
+
+</body>
+
+</html>

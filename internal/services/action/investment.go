@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"time"
 
 	"loan-service/internal/entity"
 	"loan-service/internal/infrastructure/constant"
+	"loan-service/internal/infrastructure/email"
+	"loan-service/internal/infrastructure/formatter"
 	"loan-service/internal/infrastructure/nsq"
+	"loan-service/internal/infrastructure/pdf"
 )
 
 func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error) {
@@ -155,17 +159,6 @@ func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (
 	}, nil
 }
 
-// Testing purpose
-func (svc *service) SendPDF(ctx context.Context, request SendAgreementLetterRequest) error {
-	err := svc.nsq.Publish(constant.NSQTopicLoanInvestmentCompleted, request)
-	if err != nil {
-		log.Println("SVC.SPDF00 | [SendPDF] Error sending PDF:", err)
-		return err
-	}
-
-	return nil
-}
-
 func (svc *service) SendAgreementLetter(ctx context.Context, request SendAgreementLetterRequest) error {
 	loan, err := svc.loanRepository.GetLoanByID(ctx, request.LoanID)
 	if err != nil {
@@ -205,18 +198,29 @@ func (svc *service) SendAgreementLetter(ctx context.Context, request SendAgreeme
 		return errors.New("investor not found")
 	}
 
-	// generate pdf
-	pdf, err := svc.pdfService.GenerateAgreementLetter(ctx, loan, borrower, investor)
+	currentTime := time.Now()
+	attributes := pdf.AgreementLetterAttributes{
+		AgreementDate:      currentTime.Format("2006-01-02"),
+		BorrowerName:       borrower.Name,
+		PrincipalAmountStr: formatter.FormatMoney(loan.PrincipalAmount),
+		InterestRate:       loan.InterestRate * 100,
+		InvestorName:       investor.Name,
+	}
+	filePath, err := pdf.GenerateAgreementLetter(attributes)
 	if err != nil {
 		log.Println("SVC.SAL07 | [SendAgreementLetter] Error generating PDF:", err)
 		return err
 	}
 
-	// send pdf
-	err = svc.fundRepository.SendPDF(ctx, request.InvestorID, pdf)
+	err = email.SendEmailWithAttachment(investor.Email, "Agreement Letter", "Please find the attached agreement letter.", filePath)
 	if err != nil {
 		log.Println("SVC.SAL08 | [SendAgreementLetter] Error sending PDF:", err)
 		return err
+	}
+
+	err = os.Remove(filePath)
+	if err != nil {
+		log.Printf("Warning: Failed to delete file %s: %v", filePath, err)
 	}
 
 	return nil
