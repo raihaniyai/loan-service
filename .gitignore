@@ -3,3 +3,5 @@ vendor/
 
 .loan-service
 .DS_Store
+
+.env

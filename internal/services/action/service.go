@@ -15,7 +15,6 @@ type Service interface {
 	UpdateLoan(ctx context.Context, request UpdateLoanRequest) (UpdateLoanResult, error)
 	InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error)
 	SendAgreementLetter(ctx context.Context, request SendAgreementLetterRequest) error
-	SendPDF(ctx context.Context, request SendAgreementLetterRequest) error
 }
 
 type service struct {
