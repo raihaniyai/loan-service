@@ -27,10 +27,10 @@ func RegisterRoutes(h *Handler, db *gorm.DB) *mux.Router {
 
 	r.HandleFunc("/loans", h.loanHandler.CreateLoan).Methods("POST")
 	r.HandleFunc("/loans/{loanID}/approve", h.actionHandler.ApproveLoan).Methods("POST")
+	r.HandleFunc("/loans/{loanID}/disburse", h.actionHandler.DisburseLoan).Methods("POST")
 	r.HandleFunc("/loans/{loanID}/invest", h.actionHandler.InvestLoan).Methods("POST")
 
 	// TODO
-	r.HandleFunc("/loans/{loanID}/disburse", h.actionHandler.DisburseLoan).Methods("POST")
 	r.HandleFunc("/loans", h.loanHandler.GetLoans).Methods("GET")
 	r.HandleFunc("/loans/{loanID}", h.loanHandler.GetLoanDetails).Methods("GET")
 

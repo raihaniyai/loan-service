@@ -12,6 +12,16 @@ type ApproveLoanResponse struct {
 	LoanID int64 `json:"loan_id"`
 }
 
+type DisburseLoanRequest struct {
+	User        entity.User `json:"-"`
+	LoanID      int64       `json:"-"`
+	DocumentURL string      `json:"document_url"`
+}
+
+type DisburseLoanResponse struct {
+	LoanID int64 `json:"loan_id"`
+}
+
 type InvestLoanRequest struct {
 	User             entity.User `json:"-"`
 	LoanID           int64       `json:"-"`

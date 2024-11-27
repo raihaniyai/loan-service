@@ -2,13 +2,14 @@ package action
 
 import "loan-service/internal/entity"
 
-type ApproveLoanRequest struct {
+type UpdateLoanRequest struct {
 	User        entity.User
 	LoanID      int64
 	DocumentURL string
+	ActionType  int
 }
 
-type ApproveLoanResult struct {
+type UpdateLoanResult struct {
 	LoanID int64
 }
 

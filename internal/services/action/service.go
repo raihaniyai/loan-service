@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	ApproveLoan(ctx context.Context, request ApproveLoanRequest) (ApproveLoanResult, error)
+	UpdateLoan(ctx context.Context, request UpdateLoanRequest) (UpdateLoanResult, error)
 	InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error)
 }
 

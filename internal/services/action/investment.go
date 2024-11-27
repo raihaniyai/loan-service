@@ -97,9 +97,22 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 			return InvestLoanResult{}, err
 		}
 
+		//set action
+		action := &entity.Action{
+			LoanID:     loan.LoanID,
+			ActionType: constant.ActionTypeInvestLoan,
+			CreatedBy:  0,
+			CreatedAt:  currentTime,
+		}
+		action.ActionID, err = s.actionRepository.SetAction(ctx, tx, action)
+		if err != nil {
+			log.Println("SVC.IL12 | [InvestLoan] Error inserting action:", err)
+			return InvestLoanResult{}, err
+		}
+
 		investments, err := s.investmentRepository.GetInvestmentsByLoanID(ctx, request.LoanID)
 		if err != nil {
-			log.Println("SVC.IL12 | [InvestLoan] Error getting investments:", err)
+			log.Println("SVC.IL13 | [InvestLoan] Error getting investments:", err)
 			return InvestLoanResult{}, err
 		}
 
@@ -112,7 +125,7 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 
 	errCommit := s.database.Commit(tx)
 	if errCommit != nil {
-		log.Println("SVC.IL13 | [InvestLoan] Error committing transaction:", errCommit)
+		log.Println("SVC.IL14 | [InvestLoan] Error committing transaction:", errCommit)
 		return InvestLoanResult{}, errCommit
 	}
 
