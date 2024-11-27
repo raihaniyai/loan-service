@@ -13,12 +13,22 @@ import (
 
 type contextKey string
 
-const userContextKey contextKey = "user"
+const UserIDContextKey contextKey = "userID"
+const UserRoleContextKey contextKey = "userRole"
+
+var skippedPaths = []string{"/users"}
 
 // JWTMiddlewareWithDB demonstrating a middleware that validates the token, fetches user details from the database, and adds it to the context.
 func JWTMiddlewareWithDB(db *gorm.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			for _, path := range skippedPaths {
+				if strings.HasPrefix(r.URL.Path, path) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				http.Error(w, "missing authorization header", http.StatusUnauthorized)
@@ -44,7 +54,8 @@ func JWTMiddlewareWithDB(db *gorm.DB) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userContextKey, user)
+			ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
+			ctx = context.WithValue(ctx, UserRoleContextKey, user.Role)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -58,9 +69,4 @@ func fetchUserFromDB(db *gorm.DB, userID int64) (*entity.User, error) {
 	}
 
 	return &user, nil
-}
-
-func GetUserFromContext(ctx context.Context) (*entity.User, bool) {
-	user, ok := ctx.Value(userContextKey).(*entity.User)
-	return user, ok
 }

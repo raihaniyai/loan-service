@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"loan-service/internal/entity"
 	"loan-service/internal/infrastructure/constant"
 	"loan-service/internal/infrastructure/middleware"
 	"loan-service/internal/infrastructure/response"
@@ -63,12 +62,12 @@ func (h *Handler) ApproveLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := middleware.GetUserFromContext(ctx)
+	userID, _ := ctx.Value(middleware.UserIDContextKey).(int64)
+	userRole, _ := ctx.Value(middleware.UserRoleContextKey).(int)
+
 	updateLoanRequest := action.UpdateLoanRequest{
-		User: entity.User{
-			UserID: user.UserID,
-			Role:   user.Role,
-		},
+		UserID:      userID,
+		UserRole:    userRole,
 		LoanID:      loanID,
 		DocumentURL: request.DocumentURL,
 		ActionType:  constant.ActionTypeApproveLoan,
@@ -137,12 +136,12 @@ func (h *Handler) DisburseLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := middleware.GetUserFromContext(ctx)
+	userID, _ := ctx.Value(middleware.UserIDContextKey).(int64)
+	userRole, _ := ctx.Value(middleware.UserRoleContextKey).(int)
+
 	updateLoanRequest := action.UpdateLoanRequest{
-		User: entity.User{
-			UserID: user.UserID,
-			Role:   user.Role,
-		},
+		UserID:      userID,
+		UserRole:    userRole,
 		LoanID:      loanID,
 		DocumentURL: request.DocumentURL,
 		ActionType:  constant.ActionTypeDisburse,
@@ -203,12 +202,12 @@ func (h *Handler) InvestLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := middleware.GetUserFromContext(ctx)
+	userID, _ := ctx.Value(middleware.UserIDContextKey).(int64)
+	userRole, _ := ctx.Value(middleware.UserRoleContextKey).(int)
+
 	investLoanRequest := action.InvestLoanRequest{
-		User: entity.User{
-			UserID: user.UserID,
-			Role:   user.Role,
-		},
+		UserID:           userID,
+		UserRole:         userRole,
 		LoanID:           loanID,
 		InvestmentAmount: request.InvestmentAmount,
 	}

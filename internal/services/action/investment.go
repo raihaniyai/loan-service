@@ -11,13 +11,13 @@ import (
 	"loan-service/internal/infrastructure/constant"
 )
 
-func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error) {
-	if request.User.Role != constant.UserRoleInvestor {
+func (svc *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (InvestLoanResult, error) {
+	if request.UserRole != constant.UserRoleInvestor {
 		log.Println("SVC.IL00 | [InvestLoan] User is not an investor")
 		return InvestLoanResult{}, errors.New("user is not an investor")
 	}
 
-	loan, err := s.loanRepository.GetLoanByID(ctx, request.LoanID)
+	loan, err := svc.loanRepository.GetLoanByID(ctx, request.LoanID)
 	if err != nil {
 		log.Println("SVC.IL01 | [InvestLoan] Error getting loan:", err)
 		return InvestLoanResult{}, err
@@ -33,14 +33,23 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 		return InvestLoanResult{}, errors.New("loan is not eligible to be invested")
 	}
 
-	// assumption: user always has enough balance to invest when hitting this endpoint
+	userBalance, err := svc.fundRepository.GetBalanceByUserID(ctx, request.UserID)
+	if err != nil {
+		log.Println("SVC.IL15 | [InvestLoan] Error getting user balance:", err)
+		return InvestLoanResult{}, err
+	}
+
+	if userBalance < request.InvestmentAmount {
+		log.Println("SVC.IL16 | [InvestLoan] The balance is not enough")
+		return InvestLoanResult{}, errors.New("your balance is not enough")
+	}
 
 	if request.InvestmentAmount > loan.PrincipalAmount {
 		log.Println("SVC.IL04 | [InvestLoan] Investment amount is too high")
 		return InvestLoanResult{}, errors.New("investment amount is too high")
 	}
 
-	totalCurrentInvestmentAmount, err := s.investmentRepository.GetTotalInvestmentAmountByLoanID(ctx, request.LoanID)
+	totalCurrentInvestmentAmount, err := svc.investmentRepository.GetTotalInvestmentAmountByLoanID(ctx, request.LoanID)
 	if err != nil {
 		log.Println("SVC.IL05 | [InvestLoan] Error getting total investment amount:", err)
 		return InvestLoanResult{}, err
@@ -51,7 +60,7 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 		return InvestLoanResult{}, errors.New("investment amount is too high")
 	}
 
-	investment, err := s.investmentRepository.GetInvestmentByLoanIDAndInvestorID(ctx, request.LoanID, request.User.UserID)
+	investment, err := svc.investmentRepository.GetInvestmentByLoanIDAndInvestorID(ctx, request.LoanID, request.UserID)
 	if err != nil {
 		log.Println("SVC.IL07 | [InvestLoan] Error getting investment:", err)
 		return InvestLoanResult{}, err
@@ -62,10 +71,10 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 		return InvestLoanResult{}, errors.New("user has already invested in this loan")
 	}
 
-	tx := s.database.BeginTx()
+	tx := svc.database.BeginTx()
 	defer func() {
 		if err != nil {
-			err = s.database.Rollback(tx)
+			err = svc.database.Rollback(tx)
 			if err != nil {
 				log.Println("SVC.IL09 | [InvestLoan] Error rolling back transaction:", err)
 			}
@@ -75,12 +84,12 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 	currentTime := time.Now()
 	investment = &entity.Investment{
 		LoanID:           request.LoanID,
-		InvestorID:       request.User.UserID,
+		InvestorID:       request.UserID,
 		InvestmentAmount: request.InvestmentAmount,
 		CreatedAt:        currentTime,
 	}
 
-	investment.InvestmentID, err = s.investmentRepository.SetInvestment(ctx, tx, investment)
+	investment.InvestmentID, err = svc.investmentRepository.SetInvestment(ctx, tx, investment)
 	if err != nil {
 		log.Println("SVC.IL10 | [InvestLoan] Error inserting investment:", err)
 		return InvestLoanResult{}, err
@@ -89,9 +98,9 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 	if totalInvestmentAmount == loan.PrincipalAmount {
 		loan.Status = constant.LoanStatusInvested
 		loan.UpdatedAt = currentTime
-		loan.UpdatedBy = request.User.UserID
+		loan.UpdatedBy = request.UserID
 
-		err = s.loanRepository.UpdateLoan(ctx, tx, loan)
+		err = svc.loanRepository.UpdateLoan(ctx, tx, loan)
 		if err != nil {
 			log.Println("SVC.IL11 | [InvestLoan] Error updating loan:", err)
 			return InvestLoanResult{}, err
@@ -104,13 +113,13 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 			CreatedBy:  0,
 			CreatedAt:  currentTime,
 		}
-		action.ActionID, err = s.actionRepository.SetAction(ctx, tx, action)
+		action.ActionID, err = svc.actionRepository.SetAction(ctx, tx, action)
 		if err != nil {
 			log.Println("SVC.IL12 | [InvestLoan] Error inserting action:", err)
 			return InvestLoanResult{}, err
 		}
 
-		investments, err := s.investmentRepository.GetInvestmentsByLoanID(ctx, request.LoanID)
+		investments, err := svc.investmentRepository.GetInvestmentsByLoanID(ctx, request.LoanID)
 		if err != nil {
 			log.Println("SVC.IL13 | [InvestLoan] Error getting investments:", err)
 			return InvestLoanResult{}, err
@@ -123,7 +132,13 @@ func (s *service) InvestLoan(ctx context.Context, request InvestLoanRequest) (In
 		}
 	}
 
-	errCommit := s.database.Commit(tx)
+	err = svc.fundRepository.UpdateBalanceByUserID(ctx, tx, request.UserID, userBalance-request.InvestmentAmount)
+	if err != nil {
+		log.Println("SVC.IL13 | [InvestLoan] Error updating balance:", err)
+		return InvestLoanResult{}, err
+	}
+
+	errCommit := svc.database.Commit(tx)
 	if errCommit != nil {
 		log.Println("SVC.IL14 | [InvestLoan] Error committing transaction:", errCommit)
 		return InvestLoanResult{}, errCommit

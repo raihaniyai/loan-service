@@ -11,7 +11,7 @@ import (
 )
 
 func (svc *service) UpdateLoan(ctx context.Context, request UpdateLoanRequest) (UpdateLoanResult, error) {
-	if request.User.Role != constant.UserRoleAdmin {
+	if request.UserRole != constant.UserRoleAdmin {
 		log.Println("SVC.UL00 | [UpdateLoan] User is not eligible to update loan")
 		err := errors.New("user is not eligible to update loan")
 		return UpdateLoanResult{}, err
@@ -47,10 +47,27 @@ func (svc *service) UpdateLoan(ctx context.Context, request UpdateLoanRequest) (
 		}
 	}()
 
+	status := constant.LoanStatusApproved
+	if request.ActionType == constant.ActionTypeDisburse {
+		status = constant.LoanStatusDisbursed
+
+		userBalance, err := svc.fundRepository.GetBalanceByUserID(ctx, loan.BorrowerID)
+		if err != nil {
+			log.Println("SVC.UL07 | [UpdateLoan] Error getting user balance:", err)
+			return UpdateLoanResult{}, err
+		}
+
+		err = svc.fundRepository.UpdateBalanceByUserID(ctx, tx, loan.BorrowerID, userBalance+loan.PrincipalAmount)
+		if err != nil {
+			log.Println("SVC.UL08 | [UpdateLoan] Error updating user balance:", err)
+			return UpdateLoanResult{}, err
+		}
+	}
+
 	currentTime := time.Now()
-	loan.Status = constant.LoanStatusApproved
+	loan.Status = status
 	loan.UpdatedAt = currentTime
-	loan.UpdatedBy = request.User.UserID
+	loan.UpdatedBy = request.UserID
 	err = svc.loanRepository.UpdateLoan(ctx, tx, loan)
 	if err != nil {
 		log.Println("SVC.UL04 | [UpdateLoan] Error updating loan:", err)
@@ -59,11 +76,11 @@ func (svc *service) UpdateLoan(ctx context.Context, request UpdateLoanRequest) (
 
 	actionApprove := &entity.Action{
 		LoanID:      request.LoanID,
-		ActionType:  constant.ActionTypeApproveLoan,
-		ActionBy:    request.User.Role,
+		ActionType:  request.ActionType,
+		ActionBy:    request.UserRole,
 		DocumentURL: request.DocumentURL,
 		CreatedAt:   currentTime,
-		CreatedBy:   request.User.UserID,
+		CreatedBy:   request.UserID,
 	}
 	_, err = svc.actionRepository.SetAction(ctx, tx, actionApprove)
 	if err != nil {

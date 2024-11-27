@@ -2,7 +2,6 @@ package loan
 
 import (
 	"encoding/json"
-	"loan-service/internal/entity"
 	"loan-service/internal/infrastructure/middleware"
 	"loan-service/internal/infrastructure/response"
 	"loan-service/internal/services/loan"
@@ -47,12 +46,12 @@ func (h *Handler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := middleware.GetUserFromContext(ctx)
+	userID, _ := ctx.Value(middleware.UserIDContextKey).(int64)
+	userRole, _ := ctx.Value(middleware.UserRoleContextKey).(int)
+
 	createLoanRequest := loan.CreateLoanRequest{
-		User: entity.User{
-			UserID: user.UserID,
-			Role:   user.Role,
-		},
+		UserID:             userID,
+		UserRole:           userRole,
 		PrincipalAmount:    request.PrincipalAmount,
 		InterestRate:       request.InterestRate,
 		ReturnOnInvestment: request.ReturnOnInvestment,

@@ -16,12 +16,12 @@ const (
 )
 
 func (svc *service) CreateLoan(ctx context.Context, request CreateLoanRequest) (CreateLoanResult, error) {
-	if request.User.Role != constant.UserRoleBorrower {
+	if request.UserRole != constant.UserRoleBorrower {
 		err := errors.New("user is not a borrower")
 		return CreateLoanResult{}, err
 	}
 
-	loan, err := svc.loanRepository.GetLoanByBorrowerIDAndNotInStatuses(ctx, request.User.UserID, []int{constant.LoanStatusClosed, constant.LoanStatusRejected})
+	loan, err := svc.loanRepository.GetLoanByBorrowerIDAndNotInStatuses(ctx, request.UserID, []int{constant.LoanStatusClosed, constant.LoanStatusRejected})
 	if err != nil {
 		log.Println("SVC.CL00 | [CreateLoan] Error getting loan by borrower id:", err)
 		return CreateLoanResult{}, err
@@ -40,7 +40,7 @@ func (svc *service) CreateLoan(ctx context.Context, request CreateLoanRequest) (
 
 	currentTime := time.Now()
 	status := constant.LoanStatusProposed
-	userID := request.User.UserID
+	userID := request.UserID
 
 	loan = &entity.Loan{
 		BorrowerID:         userID,
@@ -74,10 +74,10 @@ func (svc *service) CreateLoan(ctx context.Context, request CreateLoanRequest) (
 	actionCreate := &entity.Action{
 		LoanID:      loanID,
 		ActionType:  constant.ActionTypeCreateLoan,
-		ActionBy:    request.User.Role,
+		ActionBy:    request.UserRole,
 		DocumentURL: "",
 		CreatedAt:   currentTime,
-		CreatedBy:   request.User.UserID,
+		CreatedBy:   request.UserID,
 	}
 	_, err = svc.actionRepository.SetAction(ctx, nil, actionCreate)
 	if err != nil {

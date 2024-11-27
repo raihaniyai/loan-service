@@ -27,6 +27,7 @@ curl --location 'http://localhost:8080/loans/1/approve' \
 Assumptions:
 1. one user only has one role (e.g. admin, borrower or investor)
 2. one borrower can only have one loan at a time
+3. source of fund is not using third party (in the same service)
 
 PostgreSQL DDL
 
@@ -89,6 +90,18 @@ CREATE TABLE users (
 
 -- Indexes for users table
 CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_email ON users(email);
+
+CREATE TABLE funds (
+    fund_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,      -- Stores user ID from external service
+    balance BIGINT NOT NULL,      -- Represents the available investment amount
+    created_at TIMESTAMP NOT NULL -- Timestamp for fund creation
+);
+
+-- Index for efficient lookup of funds by user ID
+CREATE INDEX idx_funds_user_id ON funds(user_id);
+
 ```
 
 DML users (data are dummy)

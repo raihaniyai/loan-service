@@ -1,9 +1,8 @@
 package action
 
-import "loan-service/internal/entity"
-
 type UpdateLoanRequest struct {
-	User        entity.User
+	UserID      int64
+	UserRole    int
 	LoanID      int64
 	DocumentURL string
 	ActionType  int
@@ -14,7 +13,8 @@ type UpdateLoanResult struct {
 }
 
 type InvestLoanRequest struct {
-	User             entity.User
+	UserID           int64
+	UserRole         int
 	LoanID           int64
 	InvestmentAmount int64
 }
